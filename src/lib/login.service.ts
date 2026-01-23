@@ -3,6 +3,9 @@ import { OAuth } from 'oauth';
 
 const API_KEY = process.env.API_KEY;
 const SECRET = process.env.SECRET;
+
+const CALLBACK_URL = process.env.CALLBACK_URL;
+
 const APP_NAME = process.env.APP_NAME;
 
 const oauth = new OAuth(
@@ -11,7 +14,7 @@ const oauth = new OAuth(
             API_KEY || '',
             SECRET || '',
             '1.0',
-            'https://localhost:98765/callback',
+            CALLBACK_URL || '',
             'HMAC-SHA1'
         );
 

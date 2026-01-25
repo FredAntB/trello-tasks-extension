@@ -1,8 +1,9 @@
 {
+  "publisher": "vscode",
   "name": "tar-trello",
   "displayName": "Task at Reach - Trello",
   "description": "A way for you to see your current tasks from a trello board, move them to another column, add comments if required, and create a git branch for each task using a given code for their name.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.108.1"
   },
@@ -20,6 +21,10 @@
       {
         "command": "tar-trello.login",
         "title": "Login to Trello"
+      },
+      {
+        "command": "tar-trello.boards",
+        "title": "Load Boards"
       }
     ],
     "walkthroughs": [
@@ -79,6 +84,7 @@
     "typescript-eslint": "^8.52.0"
   },
   "dependencies": {
+    "node-fetch": "^3.3.2",
     "oauth": "^0.10.2"
   }
 }

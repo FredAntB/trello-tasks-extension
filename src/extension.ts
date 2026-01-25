@@ -1,19 +1,36 @@
 import * as vscode from "vscode";
 import { login } from "./lib/login.service";
+import { Board } from "./lib/board.service";
 
+let board = null;
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "tar-trello" is now active!');
 
-  const loginCmd = vscode.commands.registerCommand("tar-trello.login", async () => {
-    try {
-	  await login(context);
-      vscode.window.showInformationMessage("Login successful!");
-    } catch (error: any) {
-      vscode.window.showErrorMessage("Login failed: " + error.message);
-    }
-  });
+  const loginCmd = vscode.commands.registerCommand(
+    "tar-trello.login",
+    async () => {
+      try {
+        await login(context);
+      } catch (error: any) {
+        vscode.window.showErrorMessage("Login failed: " + error.message);
+      }
+    },
+  );
 
   context.subscriptions.push(loginCmd);
+
+  const boardCmd = vscode.commands.registerCommand(
+    "tar-trello.selectBoard",
+    async () => {
+      try {
+        board = new Board(context);
+        board.getBoards();
+      } catch (error) {
+        vscode.window.showErrorMessage("Board loading failed: " + error);
+      }
+    },
+  );
+  context.subscriptions.push(boardCmd);
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
@@ -33,4 +50,6 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  board = null;
+}

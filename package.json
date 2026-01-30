@@ -13,11 +13,18 @@
   "activationEvents": ["onUri"],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Settings Task At Reach - Trello",
+      "type": "object",
+      "properties": {
+        "tar-trello.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether TAR - Trello is enabled."
+        }
+      }
+    },
     "commands": [
-      {
-        "command": "tar-trello.helloWorld",
-        "title": "Hello World"
-      },
       {
         "command": "tar-trello.login",
         "title": "Login to Trello"
@@ -76,10 +83,29 @@
         {
           "id": "tar-trello",
           "title": "Task At Reach",
-          "icon": "resources/tar-trello.svg"
+          "icon": "resources/fake-icon-white.svg"
         }
       ]
-    }
+    },
+    "views": {
+      "tar-trello": [
+        {
+          "id": "tarTrelloBoardsView",
+          "name": "Trello Boards"
+        },
+        {
+          "id": "tarTrelloTasksView",
+          "name": "Trello Tasks"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "tarTrelloBoardsView",
+        "contents": "In order to use tar capabilities, please login first.\n[Login](command:tar-trello.login)",
+        "when": "config.tar-trello.enabled"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

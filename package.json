@@ -90,18 +90,18 @@
     "views": {
       "tar-trello": [
         {
-          "id": "tarTrelloBoardsView",
+          "id": "tar-trello-boards-view",
           "name": "Trello Boards"
         },
         {
-          "id": "tarTrelloTasksView",
+          "id": "tar-trello-tasks-view",
           "name": "Trello Tasks"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "tarTrelloBoardsView",
+        "view": "tar-trello-boards-view",
         "contents": "In order to use tar capabilities, please login first.\n[Login](command:tar-trello.login)",
         "when": "config.tar-trello.enabled"
       }

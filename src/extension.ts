@@ -1,10 +1,16 @@
 import * as vscode from "vscode";
 import { login } from "./lib/login.service";
 import { Board } from "./lib/board.service";
+import { BoardModel, BoardTreeDataProvider } from "./lib/board.explorer";
 
 let board = null;
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "tar-trello" is now active!');
+
+  // Adding custom tree data provider
+  const boardModel = new BoardModel(context);
+  const boardProvider = new BoardTreeDataProvider(boardModel);
+  context.subscriptions.push(vscode.window.registerTreeDataProvider("tar-trello-boards-view", boardProvider));
 
   const loginCmd = vscode.commands.registerCommand(
     "tar-trello.login",

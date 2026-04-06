@@ -8,6 +8,7 @@ export interface BoardNode {
   id: string;
   name: string;
   desc?: string;
+  bgImage?: string;
   type: "board";
 }
 
@@ -42,12 +43,22 @@ export class BoardModel {
       const token = await this.getToken();
       const tokenParam = token ? `&token=${token}` : "";
       const url = `${BASE_URL}/members/me/boards?key=${API_KEY}${tokenParam}`;
-      const res = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
       const boards = (await res.json()) as any[];
+
       return boards.map((b) => ({
         id: b.id,
         name: b.name,
         desc: b.desc || "No description available.",
+        bgImage:
+        b.prefs?.backgroundImageScaled?.[0]?.url ||
+        b.prefs?.backgroundImageScaled?.[0]?.url ||
+        b.prefs?.backgroundImage ||
+          b.prefs?.background ||
+          undefined,
         type: "board" as const,
       }));
     })();
@@ -58,7 +69,10 @@ export class BoardModel {
       const token = await this.getToken();
       const tokenParam = token ? `&token=${token}` : "";
       const url = `${BASE_URL}/boards/${boardId}/lists?key=${API_KEY}${tokenParam}`;
-      const res = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
       const lists = (await res.json()) as any[];
       return lists.map((l) => ({
         id: l.id,
@@ -74,7 +88,10 @@ export class BoardModel {
       const token = await this.getToken();
       const tokenParam = token ? `&token=${token}` : "";
       const url = `${BASE_URL}/lists/${listId}/cards?key=${API_KEY}${tokenParam}`;
-      const res = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
       const cards = (await res.json()) as any[];
       return cards.map((c) => ({
         id: c.id,

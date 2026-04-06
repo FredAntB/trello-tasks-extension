@@ -1,0 +1,132 @@
+body {
+	background-color: transparent;
+}
+
+.board-list {
+	list-style: none;
+	padding: 0;
+}
+
+.color-entry {
+	width: 100%;
+	display: flex;
+	margin-bottom: 0.4em;
+	border: 1px solid var(--vscode-input-border);
+}
+
+.color-preview {
+	width: 2em;
+	height: 2em;
+}
+
+.color-preview:hover {
+	outline: inset white;
+}
+
+.color-input {
+	display: block;
+	flex: 1;
+	width: 100%;
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	border: none;
+	padding: 0 0.6em;
+}
+
+.load-boards-button {
+	display: block;
+	border: none;
+	margin: 0 auto;
+}
+
+.buttons {
+	display:flex;
+	gap:8px;
+	justify-content:center;
+	margin-top:8px;
+}
+
+.reload-boards-button {
+	background: transparent;
+	border: 1px solid var(--vscode-input-border);
+	padding: 4px 8px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+/* Board card styles */
+.board-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+
+.board-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: var(--board-accent-bg, transparent);
+	border: 1px solid var(--board-accent-border, rgba(0,0,0,0.08));
+	cursor: pointer;
+	transition: transform .07s ease, box-shadow .12s ease;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.board-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.board-card .card-name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-meta { display:flex; flex-direction:column; flex: 1 1 auto; min-width: 0; }
+
+.desc-label {
+	font-size: 11px;
+	color: var(--vscode-editorHint-foreground);
+	margin-top: 4px;
+	opacity: 0.9;
+}
+
+.board-card .card-desc {
+	margin: 2px 0 0 0;
+	font-size: 12px;
+	color: var(--vscode-editor-foreground);
+	/* clamp to 2 lines with ellipsis (works in Chromium-based webview) */
+	display: -webkit-box;
+	line-clamp: 2;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.2em;
+	max-height: calc(1.2em * 2);
+}
+
+.board-preview {
+	width: 36px;
+	height: 36px;
+	border-radius: 6px;
+	background: var(--board-accent-border, rgba(0,0,0,0.06));
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	flex: 0 0 36px;
+}
+
+@media (max-width: 420px) {
+	.board-card { padding: 8px; }
+	.board-card .card-name { font-size: 12px; }
+}

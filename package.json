@@ -33,6 +33,11 @@
         "command": "tar-trello.load-boards",
         "title": "Load Boards"
       },
+            {
+        "command": "tar-trello.reload-boards",
+        "title": "Refresh Boards",
+        "icon": "$(refresh)"
+      },
       {
         "command": "tar-trello.select-board",
         "title": "Select Board"
@@ -42,6 +47,15 @@
         "title": "View Tasks"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "tar-trello.reload-boards",
+          "when": "view == tar-trello-boards-view",
+          "group": "navigation"
+        }
+      ]
+    },
     "walkthroughs": [
       {
         "id": "tutorial",
@@ -90,6 +104,7 @@
     "views": {
       "tar-trello": [
         {
+          "type": "webview",
           "id": "tar-trello-boards-view",
           "name": "Trello Boards"
         },

@@ -1,0 +1,192 @@
+//@ts-check
+
+/** @type {() => any} */
+// @ts-ignore - injected by VS Code webview runtime
+const acquireVsCodeApi = globalThis.acquireVsCodeApi;
+
+// This script will be run within the webview itself
+// It cannot access the main VS Code APIs directly.
+(function () {
+    /* global acquireVsCodeApi */
+    const vscode = acquireVsCodeApi();
+    const cardTemplate = /** @type {HTMLTemplateElement | null} */ (document.getElementById('card-template'));
+    const boardList = /** @type {HTMLElement | null} */ (document.querySelector('.board-list'));
+    const loadBoardsButton = /** @type {HTMLButtonElement | null} */ (document.querySelector('.load-boards-button'));
+
+    const oldState = vscode.getState() || { boards: [] };
+    console.dir(oldState.board, { depth: null });
+
+    if (oldState.boards && oldState.boards.length > 0) {
+        if (loadBoardsButton) {
+            loadBoardsButton.disabled = true;
+            loadBoardsButton.hidden = true;
+            loadBoardsButton.style.display = 'none';
+            console.log('[webview] initial state: boards present, disabling load button');
+        }
+    }
+    else {
+        console.log('[webview] initial state: no boards, load button enabled');
+        loadBoardsButton?.removeAttribute('disabled');
+        loadBoardsButton?.removeAttribute('hidden');
+        loadBoardsButton?.style.removeProperty('display');
+    }
+
+    // Theme-based accent: pick a soft light color for light themes and a purplish tint for dark themes
+    (function setBoardAccentFromTheme(){
+        const cs = getComputedStyle(document.documentElement);
+        // try a few theme variables (some themes expose different vars)
+        const themeBg = cs.getPropertyValue('--vscode-sideBar-background') || cs.getPropertyValue('--vscode-editor-background') || cs.getPropertyValue('--vscode-panel-background') || '';
+
+        /** @param {string} input */
+        function parseColor(input){
+            if (!input) { return null; }
+            input = input.trim();
+            // rgb(a)
+            const m = input.match(/rgba?\(([^)]+)\)/);
+            if (m) {
+                const parts = m[1].split(',').map((s) => parseFloat(s.trim()));
+                return { r: parts[0], g: parts[1], b: parts[2], a: parts[3] ?? 1 };
+            }
+            // hex
+            const hex = input.replace('#','');
+            if (hex.length === 6) {
+                return { r: parseInt(hex.substring(0,2),16), g: parseInt(hex.substring(2,4),16), b: parseInt(hex.substring(4,6),16), a: 1 };
+            }
+            if (hex.length === 3) {
+                return { r: parseInt(hex[0]+hex[0],16), g: parseInt(hex[1]+hex[1],16), b: parseInt(hex[2]+hex[2],16), a:1 };
+            }
+            return null;
+        }
+
+        /** @param {{r:number,g:number,b:number}} c */
+        function luminance(c){
+            // c: {r,g,b}
+            const srgb = [c.r/255, c.g/255, c.b/255].map((v) => v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4));
+            return 0.2126*srgb[0] + 0.7152*srgb[1] + 0.0722*srgb[2];
+        }
+
+        const parsed = parseColor(themeBg);
+        const isDark = parsed ? (luminance(parsed) < 0.5) : true;
+
+        if (isDark) {
+            // purplish clear background and border for dark theme
+            document.documentElement.style.setProperty('--board-accent-bg', 'rgba(108,74,226,0.08)');
+            document.documentElement.style.setProperty('--board-accent-border', 'rgba(108,74,226,0.28)');
+        } else {
+            // light subtle bluish for light theme
+            document.documentElement.style.setProperty('--board-accent-bg', '#f1f8ff');
+            document.documentElement.style.setProperty('--board-accent-border', '#d6e9ff');
+        }
+    })();
+
+    /** @type {Array<{ id: string, name: string, desc?: string, bgImage?: string }>} */
+    let boards = oldState.boards;
+
+    updateBoardList(boards);
+    // disable load button if we already have boards
+    if (loadBoardsButton) {
+        loadBoardsButton.disabled = Array.isArray(boards) && boards.length > 0;
+    }
+
+    // Request boards from the extension when button clicked
+    if (loadBoardsButton) {
+        loadBoardsButton.addEventListener('click', () => {
+            vscode.postMessage({ command: 'load-boards' });
+        });
+    }
+
+    // Handle messages sent from the extension to the webview
+    window.addEventListener('message', event => {
+        const message = event.data; // The json data that the extension sent
+        console.log('[webview] received message', message);
+        const action = message.command || message.type;
+        switch (action) {
+            case 'boards': {
+                console.dir(message.boards, { depth: null });
+                updateBoardList(message.boards || []);
+                break;
+            }
+            case 'lists': {
+                // TODO: render lists if needed
+                break;
+            }
+            case 'cards': {
+                // TODO: render cards if needed
+                break;
+            }
+            case 'error': {
+                console.error('Error from extension:', message.message);
+                break;
+            }
+        }
+    });
+
+    /**
+     * @param {{ id: string, name: string, desc?: string, bgImage?: string }} board
+     */
+    function renderCard(board) {
+        if (cardTemplate && boardList) {
+            const fragment = cardTemplate.content.cloneNode(true);
+            const cardName = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.card-name'));
+            const cardDesc = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.card-desc'));
+            const cardRoot = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.board-card'));
+
+            if (cardName) {
+                cardName.textContent = board.name || '';
+            }
+            if (cardDesc) {
+                cardDesc.textContent = board.desc || '';
+            }
+            if (cardRoot) {
+                cardRoot.addEventListener('click', () => onBoardClicked(board.id));
+                // set background image if provided
+                const preview = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.board-preview'));
+                if (preview && board.bgImage) {
+                    // prefer HTTPS URLs; CSP allows https: per provider
+                    preview.style.backgroundImage = `url(${board.bgImage})`;
+                }
+            }
+
+            boardList.appendChild(fragment);
+        } else {
+            // fallback: simple li
+            const li = document.createElement('li');
+            li.textContent = board.name || board.id;
+            if (boardList) {
+                li.addEventListener('click', () => onBoardClicked(board.id));
+                boardList.appendChild(li);
+            }
+        }
+    }
+
+    /**
+     * @param {Array<{ id: string, name: string, desc?: string, bgImage?: string }>} boards
+     */
+    function updateBoardList(boards) {
+        if (!boardList) {
+            return;
+        }
+
+        boardList.textContent = '';
+        for (const board of boards) {
+            console.dir(board, { depth: null });
+            renderCard(board);
+        }
+        // Update the saved state
+        vscode.setState({ boards: boards });
+        // disable load button when boards exist, enable when cleared
+        if (loadBoardsButton) {
+            loadBoardsButton.disabled = Array.isArray(boards) && boards.length > 0;
+            loadBoardsButton.hidden = Array.isArray(boards) && boards.length > 0;
+            console.log('[webview] updateBoardList: set disabled=', loadBoardsButton.disabled, 'hidden=', loadBoardsButton.hidden, 'boards.length=', boards.length);
+        }
+    }
+
+    /** 
+     * @param {string} boardId
+     */
+    function onBoardClicked(boardId) {
+        vscode.postMessage({ command: 'selectBoard', boardId });
+    }
+}());
+

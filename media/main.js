@@ -13,7 +13,7 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
     const boardList = /** @type {HTMLElement | null} */ (document.querySelector('.board-list'));
     const loadBoardsButton = /** @type {HTMLButtonElement | null} */ (document.querySelector('.load-boards-button'));
 
-    const oldState = vscode.getState() || { boards: [] };
+    const oldState = vscode.getState() || { boards: [], listsByBoardId: {} };
     console.dir(oldState.board, { depth: null });
 
     if (oldState.boards && oldState.boards.length > 0) {
@@ -80,7 +80,13 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
     })();
 
     /** @type {Array<{ id: string, name: string, desc?: string, bgImage?: string }>} */
-    let boards = oldState.boards;
+    let boards = Array.isArray(oldState.boards) ? oldState.boards : [];
+    /** @type {Record<string, Array<{ id: string, name: string, boardId: string, type: 'list' }>>} */
+    let listsByBoardId = oldState.listsByBoardId && typeof oldState.listsByBoardId === 'object' ? oldState.listsByBoardId : {};
+    /** @type {Set<string>} */
+    const expandedBoards = new Set();
+    /** @type {Set<string>} */
+    const pendingBoards = new Set();
 
     updateBoardList(boards);
     // disable load button if we already have boards
@@ -107,7 +113,7 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 break;
             }
             case 'lists': {
-                // TODO: render lists if needed
+                handleListsMessage(message.boardId, message.lists || []);
                 break;
             }
             case 'cards': {
@@ -126,6 +132,10 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
      */
     function renderCard(board) {
         if (cardTemplate && boardList) {
+            const item = document.createElement('li');
+            item.className = 'board-item';
+            item.dataset.boardId = board.id;
+
             const fragment = cardTemplate.content.cloneNode(true);
             const cardName = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.card-name'));
             const cardDesc = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.card-desc'));
@@ -139,6 +149,7 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
             }
             if (cardRoot) {
                 cardRoot.addEventListener('click', () => onBoardClicked(board.id));
+                cardRoot.classList.toggle('is-expanded', expandedBoards.has(board.id));
                 // set background image if provided
                 const preview = /** @type {HTMLElement | null} */ ((/** @type {DocumentFragment} */ (fragment)).querySelector('.board-preview'));
                 if (preview && board.bgImage) {
@@ -147,7 +158,23 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 }
             }
 
-            boardList.appendChild(fragment);
+            const listsContainer = document.createElement('div');
+            listsContainer.className = 'board-lists';
+            listsContainer.hidden = !expandedBoards.has(board.id);
+
+            item.appendChild(fragment);
+            item.appendChild(listsContainer);
+            boardList.appendChild(item);
+
+            if (expandedBoards.has(board.id)) {
+                const cachedLists = listsByBoardId[board.id];
+                if (Array.isArray(cachedLists)) {
+                    renderLists(board.id, cachedLists);
+                } else {
+                    renderLoading(board.id);
+                    requestBoardLists(board.id);
+                }
+            }
         } else {
             // fallback: simple li
             const li = document.createElement('li');
@@ -167,13 +194,21 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
             return;
         }
 
+        // keep expansion state only for boards still present
+        const boardIds = new Set((boards || []).map((b) => b.id));
+        for (const expandedId of Array.from(expandedBoards)) {
+            if (!boardIds.has(expandedId)) {
+                expandedBoards.delete(expandedId);
+            }
+        }
+
         boardList.textContent = '';
         for (const board of boards) {
             console.dir(board, { depth: null });
             renderCard(board);
         }
         // Update the saved state
-        vscode.setState({ boards: boards });
+        saveState();
         // disable load button when boards exist, enable when cleared
         if (loadBoardsButton) {
             loadBoardsButton.disabled = Array.isArray(boards) && boards.length > 0;
@@ -182,11 +217,158 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
         }
     }
 
+    function saveState() {
+        vscode.setState({
+            boards,
+            listsByBoardId
+        });
+    }
+
+    /**
+     * @param {string} boardId
+     * @returns {HTMLElement | null}
+     */
+    function getBoardItemById(boardId) {
+        if (!boardList) {
+            return null;
+        }
+        const children = boardList.querySelectorAll('.board-item');
+        for (const child of children) {
+            if (/** @type {HTMLElement} */ (child).dataset.boardId === boardId) {
+                return /** @type {HTMLElement} */ (child);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param {string} boardId
+     * @returns {HTMLElement | null}
+     */
+    function getBoardListsContainer(boardId) {
+        const item = getBoardItemById(boardId);
+        if (!item) {
+            return null;
+        }
+        return /** @type {HTMLElement | null} */ (item.querySelector('.board-lists'));
+    }
+
+    /**
+     * @param {string} boardId
+     * @param {boolean} expanded
+     */
+    function setBoardExpanded(boardId, expanded) {
+        const item = getBoardItemById(boardId);
+        if (!item) {
+            return;
+        }
+        const cardRoot = /** @type {HTMLElement | null} */ (item.querySelector('.board-card'));
+        const listsContainer = /** @type {HTMLElement | null} */ (item.querySelector('.board-lists'));
+        if (cardRoot) {
+            cardRoot.classList.toggle('is-expanded', expanded);
+        }
+        if (listsContainer) {
+            listsContainer.hidden = !expanded;
+        }
+    }
+
+    /**
+     * @param {string} boardId
+     */
+    function requestBoardLists(boardId) {
+        if (pendingBoards.has(boardId)) {
+            return;
+        }
+        pendingBoards.add(boardId);
+        vscode.postMessage({ command: 'selectBoard', boardId });
+    }
+
+    /**
+     * @param {string} boardId
+     */
+    function renderLoading(boardId) {
+        const listsContainer = getBoardListsContainer(boardId);
+        if (!listsContainer) {
+            return;
+        }
+        listsContainer.textContent = '';
+        const loading = document.createElement('p');
+        loading.className = 'board-lists-loading';
+        loading.textContent = 'Loading lists...';
+        listsContainer.appendChild(loading);
+    }
+
+    /**
+     * @param {string} boardId
+     * @param {Array<{ id: string, name: string, boardId: string, type: 'list' }>} lists
+     */
+    function renderLists(boardId, lists) {
+        const listsContainer = getBoardListsContainer(boardId);
+        if (!listsContainer) {
+            return;
+        }
+
+        listsContainer.textContent = '';
+        if (!Array.isArray(lists) || lists.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'board-lists-empty';
+            empty.textContent = 'No lists found.';
+            listsContainer.appendChild(empty);
+            return;
+        }
+
+        const ul = document.createElement('ul');
+        ul.className = 'lists-list';
+        for (const listNode of lists) {
+            const li = document.createElement('li');
+            li.className = 'list-row';
+            li.textContent = listNode.name;
+            ul.appendChild(li);
+        }
+        listsContainer.appendChild(ul);
+    }
+
+    /**
+     * @param {string} boardId
+     * @param {Array<{ id: string, name: string, boardId: string, type: 'list' }>} lists
+     */
+    function handleListsMessage(boardId, lists) {
+        if (!boardId) {
+            return;
+        }
+        pendingBoards.delete(boardId);
+        listsByBoardId = {
+            ...listsByBoardId,
+            [boardId]: Array.isArray(lists) ? lists : []
+        };
+        saveState();
+        if (expandedBoards.has(boardId)) {
+            renderLists(boardId, listsByBoardId[boardId]);
+        }
+    }
+
     /** 
      * @param {string} boardId
      */
     function onBoardClicked(boardId) {
-        vscode.postMessage({ command: 'selectBoard', boardId });
+        if (expandedBoards.has(boardId)) {
+            expandedBoards.delete(boardId);
+            setBoardExpanded(boardId, false);
+            saveState();
+            return;
+        }
+
+        expandedBoards.add(boardId);
+        setBoardExpanded(boardId, true);
+
+        const cachedLists = listsByBoardId[boardId];
+        if (Array.isArray(cachedLists)) {
+            renderLists(boardId, cachedLists);
+        } else {
+            renderLoading(boardId);
+            requestBoardLists(boardId);
+        }
+        saveState();
     }
 }());
 

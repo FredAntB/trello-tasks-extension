@@ -58,6 +58,7 @@
     },
     "walkthroughs": [
       {
+        "icon": "resources/icon-white.png",
         "id": "tutorial",
         "title": "Get started with TarTrello",
         "description": "Let's setup your Trello integration",
@@ -97,7 +98,7 @@
         {
           "id": "tar-trello",
           "title": "Task At Reach",
-          "icon": "resources/fake-icon-white.svg"
+          "icon": "resources/icon-white.png"
         }
       ]
     },

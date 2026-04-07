@@ -87,6 +87,7 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
     const expandedBoards = new Set();
     /** @type {Set<string>} */
     const pendingBoards = new Set();
+    const COLLAPSE_ANIMATION_MS = 220;
 
     updateBoardList(boards);
     // disable load button if we already have boards
@@ -268,7 +269,18 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
             cardRoot.classList.toggle('is-expanded', expanded);
         }
         if (listsContainer) {
-            listsContainer.hidden = !expanded;
+            if (expanded) {
+                listsContainer.classList.remove('is-collapsing');
+                listsContainer.hidden = false;
+            } else {
+                listsContainer.classList.add('is-collapsing');
+                window.setTimeout(() => {
+                    if (!expandedBoards.has(boardId)) {
+                        listsContainer.hidden = true;
+                        listsContainer.classList.remove('is-collapsing');
+                    }
+                }, COLLAPSE_ANIMATION_MS);
+            }
         }
     }
 

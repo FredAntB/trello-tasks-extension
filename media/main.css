@@ -140,6 +140,12 @@ body {
 	background: transparent;
 	border: none;
 	border-radius: 8px;
+	animation: lists-reveal 260ms ease-out;
+}
+
+.board-lists.is-collapsing {
+	animation: lists-collapse 220ms ease-in both;
+	pointer-events: none;
 }
 
 .board-lists-loading,
@@ -148,6 +154,9 @@ body {
 	font-size: 12px;
 	color: var(--vscode-descriptionForeground);
 	opacity: 0.9;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--vscode-editorWidget-background) 88%, var(--board-accent-bg, transparent));
 }
 
 .lists-list {
@@ -163,18 +172,105 @@ body {
 	font-size: 12px;
 	font-weight: 500;
 	color: var(--vscode-foreground);
-	padding: 8px 10px;
+	padding: 9px 12px;
 	border: 1px solid color-mix(in srgb, var(--board-accent-border, var(--vscode-input-border)) 60%, var(--vscode-input-border));
 	border-radius: 10px;
 	background: color-mix(in srgb, var(--board-accent-bg, var(--vscode-editorWidget-background)) 50%, var(--vscode-editorWidget-background));
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
 	transition: transform 90ms ease, box-shadow 120ms ease, border-color 120ms ease;
+	position: relative;
+	overflow: hidden;
+	width: 80%;
+	margin-left: 10px;
+	box-sizing: border-box;
+	transform-origin: top left;
+	animation: list-decompress 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lists-list .list-row:nth-child(1) { animation-delay: 40ms; }
+.lists-list .list-row:nth-child(2) { animation-delay: 120ms; }
+.lists-list .list-row:nth-child(3) { animation-delay: 200ms; }
+.lists-list .list-row:nth-child(4) { animation-delay: 280ms; }
+.lists-list .list-row:nth-child(5) { animation-delay: 360ms; }
+.lists-list .list-row:nth-child(6) { animation-delay: 440ms; }
+.lists-list .list-row:nth-child(7) { animation-delay: 520ms; }
+.lists-list .list-row:nth-child(8) { animation-delay: 600ms; }
+.lists-list .list-row:nth-child(9) { animation-delay: 680ms; }
+.lists-list .list-row:nth-child(n+10) { animation-delay: 760ms; }
+
+.list-row::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background: color-mix(in srgb, var(--vscode-focusBorder) 70%, var(--board-accent-border, #7c5cff));
+	opacity: 0.85;
 }
 
 .list-row:hover {
 	transform: translateY(-1px);
 	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
 	border-color: var(--vscode-focusBorder);
+}
+
+.list-row:hover::before {
+	opacity: 1;
+}
+
+.board-lists.is-collapsing .list-row {
+	animation: list-collapse 180ms ease-in both;
+}
+
+@keyframes lists-reveal {
+	from {
+		opacity: 0;
+		transform: translateY(-3px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes list-decompress {
+	0% {
+		opacity: 0;
+		transform: translateY(-6px) scaleY(0.72);
+		filter: saturate(85%);
+	}
+	65% {
+		opacity: 1;
+		transform: translateY(0) scaleY(1.03);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scaleY(1);
+		filter: saturate(100%);
+	}
+}
+
+@keyframes lists-collapse {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-1px);
+	}
+}
+
+@keyframes list-collapse {
+	from {
+		opacity: 1;
+		transform: translateY(0) scaleY(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-3px) scaleY(0.92);
+	}
 }
 
 @media (max-width: 420px) {

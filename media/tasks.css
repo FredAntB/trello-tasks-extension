@@ -37,6 +37,13 @@ body {
 	color: var(--vscode-descriptionForeground);
 }
 
+.selected-list-label.is-loading {
+	color: var(--vscode-focusBorder);
+	font-weight: 600;
+	text-shadow: 0 0 10px color-mix(in srgb, var(--vscode-focusBorder) 35%, transparent);
+	animation: loading-label-pulse 950ms ease-in-out infinite;
+}
+
 .tasks-list {
 	list-style: none;
 	padding: 0;
@@ -49,8 +56,8 @@ body {
 .task-card {
 	padding: 10px;
 	border-radius: 8px;
-	border: 1px solid var(--vscode-input-border);
-	background: color-mix(in srgb, var(--vscode-editorWidget-background) 82%, var(--vscode-list-hoverBackground));
+	border: 1px solid var(--task-accent-border, var(--vscode-input-border));
+	background: var(--task-accent-bg, color-mix(in srgb, var(--vscode-editorWidget-background) 82%, var(--vscode-list-hoverBackground)));
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -78,4 +85,48 @@ body {
 	font-size: 12px;
 	color: var(--vscode-descriptionForeground);
 	background: color-mix(in srgb, var(--vscode-editorWidget-background) 85%, transparent);
+}
+
+.task-loading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px;
+	border-radius: 8px;
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+	background: color-mix(in srgb, var(--vscode-editorWidget-background) 85%, transparent);
+}
+
+.task-spinner {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 3px solid color-mix(in srgb, var(--vscode-input-border) 56%, transparent);
+	border-top-color: var(--vscode-focusBorder);
+	border-right-color: color-mix(in srgb, var(--vscode-focusBorder) 65%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--vscode-focusBorder) 22%, transparent);
+	animation: task-spin 700ms linear infinite;
+	flex: 0 0 auto;
+}
+
+.task-loading-text {
+	font-weight: 600;
+	color: var(--vscode-focusBorder);
+	animation: loading-text-glow 900ms ease-in-out infinite;
+}
+
+@keyframes task-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+@keyframes loading-label-pulse {
+	0%, 100% { opacity: 0.85; }
+	50% { opacity: 1; }
+}
+
+@keyframes loading-text-glow {
+	0%, 100% { opacity: 0.75; }
+	50% { opacity: 1; }
 }

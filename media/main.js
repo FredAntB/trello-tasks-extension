@@ -73,9 +73,9 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
             document.documentElement.style.setProperty('--board-accent-bg', 'rgba(108,74,226,0.08)');
             document.documentElement.style.setProperty('--board-accent-border', 'rgba(108,74,226,0.28)');
         } else {
-            // light subtle bluish for light theme
-            document.documentElement.style.setProperty('--board-accent-bg', '#f1f8ff');
-            document.documentElement.style.setProperty('--board-accent-border', '#d6e9ff');
+            // light blue-cyan accent for light theme
+            document.documentElement.style.setProperty('--board-accent-bg', '#e6f7ff');
+            document.documentElement.style.setProperty('--board-accent-border', '#9fdfff');
         }
     })();
 

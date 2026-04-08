@@ -67,6 +67,7 @@ export class TasksViewProvider implements vscode.WebviewViewProvider {
             return;
         }
         try {
+            this._view.webview.postMessage({ command: 'loading', listId, listName });
             const cards = await this.model.retrieveCards(listId, boardId);
             this._view.webview.postMessage({ command: 'cards', cards, listId, boardId, listName });
         } catch (err: any) {

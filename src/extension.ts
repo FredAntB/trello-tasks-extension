@@ -2,40 +2,43 @@ import * as vscode from "vscode";
 import { login } from "./lib/login.service";
 import { BoardsViewProvider } from "./lib/board.webview";
 import { Board } from "./lib/board.service";
-import { BoardModel } from "./lib/board.explorer";
-import { BoardTreeDataProvider } from "./lib/board.explorer";
+import { TasksViewProvider } from "./lib/task.webview";
 
 let board = null;
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "tar-trello" is now active!');
 
-  // WEB DATA PROVIDER ------------ START
-  const provider = new BoardsViewProvider(context, context.extensionUri);
+  const boardProvider = new BoardsViewProvider(context, context.extensionUri);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       BoardsViewProvider.viewType,
-      provider,
+      boardProvider,
     ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("tar-trello.load-boards", () => {
-      provider.loadBoards();
+      boardProvider.loadBoards();
     }),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("tar-trello.reload-boards", () => {
-      provider.loadBoards();
+      boardProvider.loadBoards();
     }),
   );
 
-  // TREE DATA PROVIDER ------------ START
-  const boardM = new BoardModel(context);
-  const boardTDP = new BoardTreeDataProvider(boardM);
+  const taskProvider = new TasksViewProvider(context, context.extensionUri);
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider("tar-trello-tasks-view", boardTDP),
+    vscode.window.registerWebviewViewProvider(
+      TasksViewProvider.viewType,
+      taskProvider,
+    ),
   );
+
+  boardProvider.setListSelectionHandler((listId: string, boardId?: string, listName?: string) => {
+    void taskProvider.showTasksForList(listId, boardId, listName);
+  });
 
   const loginCmd = vscode.commands.registerCommand(
     "tar-trello.login",

@@ -7,6 +7,7 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 
 	private _view?: vscode.WebviewView;
 	private model: BoardModel;
+	private onListSelected?: (listId: string, boardId?: string, listName?: string) => void;
 
 	constructor(
 		private readonly _context: vscode.ExtensionContext,
@@ -53,8 +54,13 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 					}
 					case 'selectList': {
 						if (msg?.listId) {
-							const cards = await this.model.retrieveCards(msg.listId, msg.boardId);
-							webviewView.webview.postMessage({ command: 'cards', cards, listId: msg.listId });
+							if (this.onListSelected) {
+								this.onListSelected(msg.listId, msg.boardId, msg.listName);
+							}
+							else {
+								const cards = await this.model.retrieveCards(msg.listId, msg.boardId);
+								webviewView.webview.postMessage({ command: 'cards', cards, listId: msg.listId });
+							}
 						}
 						break;
 					}
@@ -64,6 +70,10 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 				webviewView.webview.postMessage({ command: 'error', message: error?.message || String(error) });
 			}
 		});
+	}
+
+	public setListSelectionHandler(handler: (listId: string, boardId?: string, listName?: string) => void) {
+		this.onListSelected = handler;
 	}
 
 	public loadBoards() {

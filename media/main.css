@@ -185,6 +185,7 @@ body {
 	box-sizing: border-box;
 	transform-origin: top left;
 	animation: list-decompress 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	cursor: pointer;
 }
 
 .lists-list .list-row:nth-child(1) { animation-delay: 40ms; }

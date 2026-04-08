@@ -335,6 +335,10 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
             const li = document.createElement('li');
             li.className = 'list-row';
             li.textContent = listNode.name;
+            li.addEventListener('click', (event) => {
+                event.stopPropagation();
+                vscode.postMessage({ command: 'selectList', listId: listNode.id, boardId, listName: listNode.name });
+            });
             ul.appendChild(li);
         }
         listsContainer.appendChild(ul);

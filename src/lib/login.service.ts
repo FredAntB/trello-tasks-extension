@@ -1,116 +1,104 @@
 import * as vscode from "vscode";
-import { OAuth } from "oauth";
 
 const API_KEY = process.env.API_KEY;
-const SECRET = process.env.SECRET;
-
-const BASE_URL = process.env.BASE_URL;
-
+const BASE_URL = process.env.BASE_URL ?? "https://trello.com/1";
+const APP_NAME = process.env.APP_NAME;
 const CALLBACK_URL = process.env.CALLBACK_URL;
 
-const APP_NAME = process.env.APP_NAME;
-
-const oauth = new OAuth(
-  `${BASE_URL}/OAuthGetRequestToken`,
-  `${BASE_URL}/OAuthGetAccessToken`,
-  API_KEY || "",
-  SECRET || "",
-  "1.0",
-  CALLBACK_URL || "",
-  "HMAC-SHA1",
-);
-
-function getRequestToken(): Promise<{ token: string; tokenSecret: string }> {
-  return new Promise((resolve, reject) => {
-    oauth.getOAuthRequestToken((error, token, tokenSecret) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve({ token, tokenSecret });
-    });
-  });
-}
-
-function getAccessToken(
-  token: string,
-  tokenSecret: string,
-  verifier: string,
-): Promise<{ accessToken: string; accessSecret: string }> {
-  return new Promise((resolve, reject) => {
-    oauth.getOAuthAccessToken(
-      token,
-      tokenSecret,
-      verifier,
-      (error, accessToken, accessSecret) => {
-        if (error) {
-          return reject(error);
-        }
-        resolve({ accessToken, accessSecret });
-      },
-    );
-  });
-}
-
-async function verifyTokens(context: vscode.ExtensionContext): Promise<any> {
+async function verifyToken(context: vscode.ExtensionContext): Promise<any> {
   const accessToken = await context.secrets.get("trelloAccessToken");
-  const accessSecret = await context.secrets.get("trelloAccessSecret");
 
-  if (!accessToken || !accessSecret) {
+  if (!accessToken) {
     vscode.window.showErrorMessage("No access token found, did you log in?");
     throw new Error("You need to login if you want to verify.");
   }
-  return new Promise((resolve, reject) => {
-    oauth.get(
-      `${BASE_URL}/members/me`,
-      accessToken,
-      accessSecret,
-      (error, data) => {
-        if (error) {
-          reject("Token verification failed...\n" + error);
-          vscode.window.showWarningMessage("Login verification failed...");
-        }
-        vscode.window.showInformationMessage(
-          "Successful Trello authentication.",
-        );
-        console.dir(data, { depth: null });
-        resolve(data);
-      },
-    );
+
+  const url = new URL(`${BASE_URL}/members/me`);
+  url.searchParams.set("key", API_KEY || "");
+  url.searchParams.set("token", accessToken);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { Accept: "application/json" },
   });
+
+  const payload = await response.json();
+
+  if (!response.ok) {
+    const message =
+      payload && typeof payload === "object" && "message" in payload
+        ? String((payload as { message?: unknown }).message)
+        : `HTTP ${response.status}`;
+    throw new Error(`Token verification failed: ${message}`);
+  }
+
+  vscode.window.showInformationMessage("Successful Trello authentication.");
+  console.dir(payload, { depth: null });
+  return payload;
 }
 
-function handleAuth(
+function buildAuthorizeUrl(returnUrl: string): string {
+  const authUrl = new URL(`${BASE_URL}/authorize`);
+  authUrl.searchParams.set("key", API_KEY || "");
+  authUrl.searchParams.set("name", APP_NAME || "Task at Reach - Trello");
+  authUrl.searchParams.set("expiration", "never");
+  authUrl.searchParams.set("scope", "read,write");
+  authUrl.searchParams.set("response_type", "token");
+  authUrl.searchParams.set("callback_method", "fragment");
+  authUrl.searchParams.set("return_url", returnUrl);
+  return authUrl.toString();
+}
+
+function parseTokenFromUri(uri: vscode.Uri): string | undefined {
+  if (uri.fragment) {
+    const fragmentParams = new URLSearchParams(uri.fragment);
+    const fragmentToken = fragmentParams.get("token");
+    if (fragmentToken) {
+      return fragmentToken;
+    }
+  }
+
+  if (uri.query) {
+    const queryParams = new URLSearchParams(uri.query);
+    const queryToken = queryParams.get("token");
+    if (queryToken) {
+      return queryToken;
+    }
+  }
+
+  return undefined;
+}
+
+async function waitForTokenFromCallback(
   context: vscode.ExtensionContext,
-  token: string,
-  tokenSecret: string,
-) {
-  const handler = vscode.window.registerUriHandler({
-    handleUri(uri) {
-      const verifier = uri.query.split("&")[1].split("=")[1];
-      getAccessToken(token, tokenSecret, verifier)
-        .then(({ accessToken, accessSecret }) => {
-          context.secrets.store("trelloAccessToken", accessToken);
-          context.secrets.store("trelloAccessSecret", accessSecret);
-        })
-        .finally(async () => {
-          await verifyTokens(context);
-          await vscode.commands.executeCommand(
-            "setContext",
-            "tar-trello.authenticated",
-            true,
-          );
-          await vscode.commands.executeCommand("tar-trello.sync-auth-state");
-        });
-        vscode.window.showInformationMessage("Login successful!");
-    },
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      disposable.dispose();
+      reject(new Error("Timed out waiting for Trello callback."));
+    }, 180000);
+
+    const disposable = vscode.window.registerUriHandler({
+      handleUri(uri) {
+        const token = parseTokenFromUri(uri);
+        if (!token) {
+          return;
+        }
+
+        clearTimeout(timeout);
+        disposable.dispose();
+        resolve(token);
+      },
+    });
+
+    context.subscriptions.push(disposable);
   });
-  context.subscriptions.push(handler);
 }
 
 export async function login(context: vscode.ExtensionContext): Promise<void> {
-  if (!API_KEY || !SECRET) {
-    vscode.window.showErrorMessage("Trello API key/secret missing.");
-    throw new Error("Missing API key or secret.");
+  if (!API_KEY) {
+    vscode.window.showErrorMessage("Trello API key missing.");
+    throw new Error("Missing API key.");
   }
 
   if (!APP_NAME) {
@@ -118,15 +106,30 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
     throw new Error("Missing Trello's app name.");
   }
 
+  if (!CALLBACK_URL) {
+    vscode.window.showErrorMessage("Trello callback URL missing.");
+    throw new Error("Missing callback URL.");
+  }
+
   try {
-    const { token, tokenSecret } = await getRequestToken();
+    const tokenPromise = waitForTokenFromCallback(context);
 
-    handleAuth(context, token, tokenSecret);
-
-    const authUrl = `${BASE_URL}/OAuthAuthorizeToken?oauth_token=${token}&name=${encodeURIComponent(APP_NAME)}&expiration=never&scope=read,write`;
+    const authUrl = buildAuthorizeUrl(CALLBACK_URL);
     await vscode.env.openExternal(vscode.Uri.parse(authUrl));
 
-    console.log("waiting for verification code...");
+    const token = await tokenPromise;
+
+    await context.secrets.store("trelloAccessToken", token.trim());
+    await verifyToken(context);
+    await vscode.commands.executeCommand(
+      "setContext",
+      "tar-trello.authenticated",
+      true,
+    );
+    await setFreshStart(false);
+    await context.globalState.update("tar-trello.fresh", false);
+    await vscode.commands.executeCommand("tar-trello.sync-auth-state");
+    vscode.window.showInformationMessage("Login successful!");
   } catch (error: any) {
     throw new Error("Login failed: " + error.message);
   }
@@ -134,7 +137,6 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
 
 export async function logout(context: vscode.ExtensionContext): Promise<void> {
   await context.secrets.delete("trelloAccessToken");
-  await context.secrets.delete("trelloAccessSecret");
   await vscode.commands.executeCommand(
     "setContext",
     "tar-trello.authenticated",
@@ -149,7 +151,9 @@ export async function reconnect(context: vscode.ExtensionContext): Promise<void>
   await login(context);
 }
 
-export async function isAuthenticated(context: vscode.ExtensionContext): Promise<boolean> {
+export async function isAuthenticated(
+  context: vscode.ExtensionContext,
+): Promise<boolean> {
   const token = await context.secrets.get("trelloAccessToken");
   return !!token;
 }
@@ -165,6 +169,16 @@ export async function updateAuthContext(
   );
 }
 
+export async function setFreshStart(
+  fresh: boolean,
+): Promise<void> {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "tar-trello.fresh",
+    fresh,
+  );
+}
+
 export async function toggleAuth(context: vscode.ExtensionContext): Promise<void> {
   const authenticated = await isAuthenticated(context);
   if (authenticated) {
@@ -174,4 +188,21 @@ export async function toggleAuth(context: vscode.ExtensionContext): Promise<void
     await updateAuthContext(context);
     await vscode.commands.executeCommand("tar-trello.sync-auth-state");
   }
+}
+
+export async function resetData(context: vscode.ExtensionContext): Promise<void> {
+  await context.secrets.delete("trelloAccessToken");
+
+  await context.globalState.update("trelloCurrentBoard", undefined);
+
+  await vscode.commands.executeCommand(
+    "setContext",
+    "tar-trello.authenticated",
+    false,
+  );
+  await setFreshStart(true);
+  await context.globalState.update("tar-trello.fresh", true);
+  await vscode.commands.executeCommand("tar-trello.sync-auth-state");
+
+  vscode.window.showInformationMessage("Task at Reach data has been reset.");
 }

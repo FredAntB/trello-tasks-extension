@@ -35,12 +35,6 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 
 		webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-		const authenticated = await isAuthenticated(this._context);
-		if (!authenticated) {
-			webviewView.webview.postMessage({ command: 'notAuthenticated' });
-			return;
-		}
-
 		webviewView.webview.onDidReceiveMessage(async (msg) => {
 			try {
 				// Accept both `command` (preferred) and legacy `type` fields from the webview
@@ -77,6 +71,12 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 				webviewView.webview.postMessage({ command: 'error', message: error?.message || String(error) });
 			}
 		});
+
+		const authenticated = await isAuthenticated(this._context);
+		if (!authenticated) {
+			webviewView.webview.postMessage({ command: 'notAuthenticated' });
+			return;
+		}
 	}
 
 	public setListSelectionHandler(handler: (listId: string, boardId?: string, listName?: string) => void) {
@@ -182,6 +182,7 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 			</body>
 			</html>`;
 	}
+
 }
 
 function getNonce() {

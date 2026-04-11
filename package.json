@@ -56,6 +56,11 @@
       {
         "command": "tar-trello.view-tasks",
         "title": "View Tasks"
+      },
+      {
+        "command": "tar-trello.reset-data",
+        "title": "Reset Trello Data",
+        "icon": "$(trash)"
       }
     ],
     "menus": {
@@ -72,12 +77,17 @@
         },
         {
           "command": "tar-trello.reload-boards",
-          "when": "view == tar-trello-boards-view",
+          "when": "view == tar-trello-boards-view && tar-trello.authenticated",
           "group": "navigation"
         },
         {
+          "command": "tar-trello.reset-data",
+          "when": "view == tar-trello-boards-view && tar-trello.authenticated",
+          "group": "navigation@99"
+        },
+        {
           "command": "tar-trello.reload-tasks",
-          "when": "view == tar-trello-tasks-view",
+          "when": "view == tar-trello-tasks-view && tar-trello.authenticated",
           "group": "navigation"
         }
       ]
@@ -124,7 +134,8 @@
         {
           "id": "tar-trello",
           "title": "Task At Reach",
-          "icon": "resources/icon-white.png"
+          "icon": "resources/icon-white.png",
+          "iconDark": "resources/icon-black.png"
         }
       ]
     },
@@ -138,8 +149,7 @@
         {
           "type": "webview",
           "id": "tar-trello-tasks-view",
-          "name": "Trello Tasks",
-          "visibility": "collapsed"
+          "name": "Trello Tasks"
         }
       ]
     },
@@ -147,7 +157,13 @@
       {
         "view": "tar-trello-boards-view",
         "contents": "In order to use tar capabilities, please login first.\n[Login](command:tar-trello.login)",
-        "when": "config.tar-trello.enabled"
+        "when": "config.tar-trello.enabled && tar-trello.fresh",
+        "priority": 1,
+        "icon": {
+          "light": "resources/welcome-light.png",
+          "dark": "resources/welcome-dark.png"
+        }
+
       }
     ]
   },

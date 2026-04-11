@@ -87,6 +87,8 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
     const expandedBoards = new Set();
     /** @type {Set<string>} */
     const pendingBoards = new Set();
+    /** @type {HTMLElement | null} */
+    let authNotice = null;
     const COLLAPSE_ANIMATION_MS = 220;
 
     updateBoardList(boards);
@@ -148,6 +150,10 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
         const action = message.command || message.type;
         switch (action) {
             case 'notAuthenticated': {
+                if (authNotice) {
+                    authNotice.remove();
+                    authNotice = null;
+                }
                 if (boardList) {
                     boardList.textContent = '';
                 }
@@ -166,6 +172,7 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 if (boardList) {
                     boardList.parentElement?.insertBefore(msg, boardList);
                 }
+                authNotice = msg;
                 break;
             }
             case 'boards': {
@@ -253,6 +260,11 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
     function updateBoardList(boards) {
         if (!boardList) {
             return;
+        }
+
+        if (authNotice) {
+            authNotice.remove();
+            authNotice = null;
         }
 
         // keep expansion state only for boards still present

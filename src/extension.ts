@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { login, logout, reconnect, toggleAuth, updateAuthContext } from "./lib/login.service";
+import { login, logout, reconnect, resetData, toggleAuth, updateAuthContext } from "./lib/login.service";
 import { BoardsViewProvider } from "./lib/board.webview";
 import { Board } from "./lib/board.service";
 import { TasksViewProvider } from "./lib/task.webview";
@@ -7,6 +7,13 @@ import { TasksViewProvider } from "./lib/task.webview";
 let board = null;
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "tar-trello" is now active!');
+
+  // Set fresh context immediately - read from globalState first
+  const isFresh = context.globalState.get<boolean>("tar-trello.fresh", true);
+  console.log("tar-trello.fresh context value:", isFresh);
+  
+  // Set the context synchronously before anything else
+  void vscode.commands.executeCommand("setContext", "tar-trello.fresh", isFresh);
 
   void updateAuthContext(context);
 
@@ -76,6 +83,19 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(logoutCmd);
+
+  const resetDataCmd = vscode.commands.registerCommand(
+    "tar-trello.reset-data",
+    async () => {
+      try {
+        await resetData(context);
+      } catch (error: any) {
+        vscode.window.showErrorMessage("Reset data failed: " + error.message);
+      }
+    },
+  );
+
+  context.subscriptions.push(resetDataCmd);
 
   const reconnectCmd = vscode.commands.registerCommand(
     "tar-trello.reconnect",

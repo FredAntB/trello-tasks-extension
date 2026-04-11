@@ -97,6 +97,12 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
         return parsed && luminance(parsed) < 0.5 ? 'dark' : 'light';
     }
 
+    function resetSelectedListLabelStyle() {
+        if (selectedListLabel) {
+            selectedListLabel.removeAttribute('style');
+        }
+    }
+
     window.addEventListener('message', (event) => {
         const message = event.data;
         const action = message?.command || message?.type;
@@ -118,14 +124,17 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 break;
             }
             case 'loading': {
+                resetSelectedListLabelStyle();
                 renderLoading(message.listId || '', message.listName || '');
                 break;
             }
             case 'cards': {
+                resetSelectedListLabelStyle();
                 renderCards(message.cards || [], message.listId || '', message.listName || '');
                 break;
             }
             case 'empty': {
+                resetSelectedListLabelStyle();
                 if (selectedListLabel) {
                     selectedListLabel.classList.remove('is-loading');
                     selectedListLabel.textContent = 'Select a list from Boards view.';
@@ -136,6 +145,7 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 break;
             }
             case 'error': {
+                resetSelectedListLabelStyle();
                 if (selectedListLabel) {
                     selectedListLabel.classList.remove('is-loading');
                     selectedListLabel.textContent = `Error: ${message.message || 'Unknown error'}`;

@@ -1,71 +1,81 @@
-# tar-trello README
+# Task at Reach - Trello
 
-This is the README for your extension "tar-trello". After writing up a brief description, we recommend including the following sections.
+Task at Reach - Trello is a VS Code extension that lets you browse Trello boards and tasks from the editor.
+
+It uses Trello’s token-based authorization flow, so users sign in directly with Trello and the resulting token is stored securely in VS Code secret storage.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Trello login via the browser token flow.
+- Boards view in the VS Code activity bar.
+- List selection and task browsing inside the editor.
+- Refresh actions for boards and tasks.
+- Built-in walkthrough for first-time setup.
 
-For example if there is an image subfolder under your extension project workspace:
+### Suggested screenshots or GIFs
 
-\!\[feature X\]\(images/feature-x.png\)
+If you want to polish the Marketplace page, consider adding:
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Login flow screenshot or GIF.
+- Boards view screenshot.
+- Tasks view screenshot.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- VS Code `^1.108.2` or newer.
+- A Trello account.
+- A Trello Power-Up / API key.
+
+## Setup
+
+1. Install dependencies with `npm install`.
+2. Set the required environment variables for development:
+	- `API_KEY`
+	- `APP_NAME`
+	- `BASE_URL` if you want to override the default Trello API base URL.
+3. Run `npm run compile` or `npm run watch`.
+4. Launch the extension host from VS Code.
+
+## How login works
+
+1. Click **Login to Trello**.
+2. The extension opens Trello’s authorization page in your browser.
+3. After approving access, Trello shows your token on the page.
+4. Paste that token back into the VS Code prompt.
+
+The token is then validated and stored securely in VS Code secret storage.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- `tar-trello.enabled`: Enable or disable the extension.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- The Trello browser callback still needs to complete so VS Code can finish the login flow.
+- If the browser does not return focus to VS Code automatically, switch back to the editor and wait for the callback to finish.
+- Board and task data depend on a valid Trello token; if the session is revoked, use the reconnect action to sign in again.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.1.0
 
-### 1.0.0
+Initial release of Task at Reach - Trello.
 
-Initial release of ...
+### 0.1.1
 
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Bug fix: logout warning now disappears after a successful login.
+Bug fix: the tasks view now refreshes after login instead of staying stuck on the logout message.
+Bug fix: auth state changes now resync the boards and tasks views automatically.
 
 ---
 
 ## Following extension guidelines
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
 
 ## For more information
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
+- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
 **Enjoy!**

@@ -144,6 +144,7 @@ export class TasksViewProvider implements vscode.WebviewViewProvider {
             </body>
             </html>`;
     }
+
 }
 
 function getNonce() {

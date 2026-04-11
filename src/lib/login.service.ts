@@ -92,7 +92,15 @@ function handleAuth(
           context.secrets.store("trelloAccessToken", accessToken);
           context.secrets.store("trelloAccessSecret", accessSecret);
         })
-        .finally(async () => await verifyTokens(context));
+        .finally(async () => {
+          await verifyTokens(context);
+          await vscode.commands.executeCommand(
+            "setContext",
+            "tar-trello.authenticated",
+            true,
+          );
+          await vscode.commands.executeCommand("tar-trello.sync-auth-state");
+        });
         vscode.window.showInformationMessage("Login successful!");
     },
   });
@@ -121,5 +129,49 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
     console.log("waiting for verification code...");
   } catch (error: any) {
     throw new Error("Login failed: " + error.message);
+  }
+}
+
+export async function logout(context: vscode.ExtensionContext): Promise<void> {
+  await context.secrets.delete("trelloAccessToken");
+  await context.secrets.delete("trelloAccessSecret");
+  await vscode.commands.executeCommand(
+    "setContext",
+    "tar-trello.authenticated",
+    false,
+  );
+  await vscode.commands.executeCommand("tar-trello.sync-auth-state");
+  vscode.window.showInformationMessage("Logged out from Trello.");
+}
+
+export async function reconnect(context: vscode.ExtensionContext): Promise<void> {
+  await logout(context);
+  await login(context);
+}
+
+export async function isAuthenticated(context: vscode.ExtensionContext): Promise<boolean> {
+  const token = await context.secrets.get("trelloAccessToken");
+  return !!token;
+}
+
+export async function updateAuthContext(
+  context: vscode.ExtensionContext,
+): Promise<void> {
+  const authenticated = await isAuthenticated(context);
+  await vscode.commands.executeCommand(
+    "setContext",
+    "tar-trello.authenticated",
+    authenticated,
+  );
+}
+
+export async function toggleAuth(context: vscode.ExtensionContext): Promise<void> {
+  const authenticated = await isAuthenticated(context);
+  if (authenticated) {
+    await logout(context);
+  } else {
+    await login(context);
+    await updateAuthContext(context);
+    await vscode.commands.executeCommand("tar-trello.sync-auth-state");
   }
 }

@@ -102,12 +102,72 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
         });
     }
 
+    /**
+     * Detect if theme is light or dark
+     * @returns {'light' | 'dark'}
+     */
+    function getThemeType() {
+        const cs = getComputedStyle(document.documentElement);
+        const themeBg = cs.getPropertyValue('--vscode-sideBar-background') || cs.getPropertyValue('--vscode-editor-background') || '';
+        
+        /** @param {string} input */
+        function parseColor(input) {
+            if (!input) {
+                return null;
+            }
+            input = input.trim();
+            const m = input.match(/rgba?\(([^)]+)\)/);
+            if (m) {
+                const parts = m[1].split(',').map((s) => parseFloat(s.trim()));
+                return { r: parts[0], g: parts[1], b: parts[2] };
+            }
+            const hex = input.replace('#', '');
+            if (hex.length === 6) {
+                return { r: parseInt(hex.substring(0, 2), 16), g: parseInt(hex.substring(2, 4), 16), b: parseInt(hex.substring(4, 6), 16) };
+            }
+            if (hex.length === 3) {
+                return { r: parseInt(hex[0] + hex[0], 16), g: parseInt(hex[1] + hex[1], 16), b: parseInt(hex[2] + hex[2], 16) };
+            }
+            return null;
+        }
+        
+        /** @param {{r:number,g:number,b:number}} c */
+        function luminance(c) {
+            const srgb = [c.r / 255, c.g / 255, c.b / 255].map((v) => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+            return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+        }
+        
+        const parsed = parseColor(themeBg);
+        return parsed && luminance(parsed) < 0.5 ? 'dark' : 'light';
+    }
+
     // Handle messages sent from the extension to the webview
     window.addEventListener('message', event => {
         const message = event.data; // The json data that the extension sent
         console.log('[webview] received message', message);
         const action = message.command || message.type;
         switch (action) {
+            case 'notAuthenticated': {
+                if (boardList) {
+                    boardList.textContent = '';
+                }
+                if (loadBoardsButton) {
+                    loadBoardsButton.disabled = true;
+                    loadBoardsButton.hidden = true;
+                    loadBoardsButton.style.display = 'none';
+                }
+                const isDark = getThemeType() === 'dark';
+                const bg = isDark ? 'rgba(255, 200, 0, 0.1)' : 'rgba(180, 120, 255, 0.12)';
+                const border = isDark ? '#ffa500' : '#a855f7';
+                const text = isDark ? '#ffa500' : '#7c3aed';
+                const msg = document.createElement('div');
+                msg.style.cssText = `padding: 20px; text-align: center; margin-top: 20px; background: ${bg}; border: 1px solid ${border}; border-radius: 6px; color: ${text}; font-size: 14px; line-height: 1.6;`;
+                msg.innerHTML = '<p style="margin: 0 0 8px 0; font-weight: 500; font-size: 16px;">Oooops, looks like you got logged out of Trello!</p><p style="margin: 8px 0; opacity: 0.9;">Use the little socket to get back in.</p>';
+                if (boardList) {
+                    boardList.parentElement?.insertBefore(msg, boardList);
+                }
+                break;
+            }
             case 'boards': {
                 console.dir(message.boards, { depth: null });
                 updateBoardList(message.boards || []);

@@ -92,7 +92,25 @@ export class BoardModel {
         method: "GET",
         headers: { Accept: "application/json" },
       });
-      const cards = (await res.json()) as any[];
+      const payload = await res.json();
+
+      if (!res.ok) {
+        const apiMessage =
+          payload && typeof payload === "object" && "message" in payload
+            ? String((payload as { message?: unknown }).message)
+            : `HTTP ${res.status}`;
+        throw new Error(`Failed to load cards: ${apiMessage}`);
+      }
+
+      if (!Array.isArray(payload)) {
+        const apiMessage =
+          payload && typeof payload === "object" && "message" in payload
+            ? String((payload as { message?: unknown }).message)
+            : "Unexpected cards response format.";
+        throw new Error(`Failed to load cards: ${apiMessage}`);
+      }
+
+      const cards = payload as any[];
       return cards.map((c) => ({
         id: c.id,
         name: c.name,

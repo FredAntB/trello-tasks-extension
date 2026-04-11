@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BoardModel } from "./board.explorer";
+import { isAuthenticated } from "./login.service";
 
 export class TasksViewProvider implements vscode.WebviewViewProvider {
 
@@ -17,7 +18,7 @@ export class TasksViewProvider implements vscode.WebviewViewProvider {
         this.model = new BoardModel(_context);
     }
 
-    public resolveWebviewView(
+    public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
@@ -34,6 +35,12 @@ export class TasksViewProvider implements vscode.WebviewViewProvider {
         };
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+        const authenticated = await isAuthenticated(this._context);
+        if (!authenticated) {
+            webviewView.webview.postMessage({ command: 'notAuthenticated' });
+            return;
+        }
 
         if (!this.refreshCommandRegistered) {
             this._context.subscriptions.push(
@@ -58,6 +65,25 @@ export class TasksViewProvider implements vscode.WebviewViewProvider {
         } else if (this._view) {
             this._view.webview.postMessage({ command: 'empty' });
         }
+    }
+
+    public async syncAuthState() {
+        if (!this._view) {
+            return;
+        }
+
+        const authenticated = await isAuthenticated(this._context);
+        if (!authenticated) {
+            this._view.webview.postMessage({ command: 'notAuthenticated' });
+            return;
+        }
+
+        if (this.selectedList?.listId) {
+            await this.showTasksForList(this.selectedList.listId, this.selectedList.boardId, this.selectedList.listName);
+            return;
+        }
+
+        this._view.webview.postMessage({ command: 'empty' });
     }
 
     public async showTasksForList(listId: string, boardId?: string, listName?: string) {

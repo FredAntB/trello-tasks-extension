@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BoardModel } from "./board.explorer";
+import { isAuthenticated } from "./login.service";
 
 export class BoardsViewProvider implements vscode.WebviewViewProvider {
 
@@ -16,7 +17,7 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 		this.model = new BoardModel(_context);
 	}
 
-	public resolveWebviewView(
+	public async resolveWebviewView(
 		webviewView: vscode.WebviewView,
 		_context: vscode.WebviewViewResolveContext,
 		_token: vscode.CancellationToken,
@@ -33,6 +34,12 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 		};
 
 		webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+		const authenticated = await isAuthenticated(this._context);
+		if (!authenticated) {
+			webviewView.webview.postMessage({ command: 'notAuthenticated' });
+			return;
+		}
 
 		webviewView.webview.onDidReceiveMessage(async (msg) => {
 			try {
@@ -74,6 +81,20 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 
 	public setListSelectionHandler(handler: (listId: string, boardId?: string, listName?: string) => void) {
 		this.onListSelected = handler;
+	}
+
+	public async syncAuthState() {
+		if (!this._view) {
+			return;
+		}
+
+		const authenticated = await isAuthenticated(this._context);
+		if (!authenticated) {
+			this._view.webview.postMessage({ command: 'notAuthenticated' });
+			return;
+		}
+
+		await this.loadBoards();
 	}
 
 	public loadBoards() {

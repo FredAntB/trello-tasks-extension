@@ -36,10 +36,6 @@
         "icon": "$(debug-connected)"
       },
       {
-        "command": "tar-trello.load-boards",
-        "title": "Load Boards"
-      },
-      {
         "command": "tar-trello.reload-boards",
         "title": "Refresh Boards",
         "icon": "$(refresh)"

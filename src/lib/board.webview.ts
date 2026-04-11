@@ -113,34 +113,13 @@ export class BoardsViewProvider implements vscode.WebviewViewProvider {
 		})();
 	}
 
-	public pickBoard() {
-		if (this._view) {
-			this._view.webview.postMessage({ type: 'pickBoard' });
-		}
-	}
-
-	public pickList() {
-		if (this._view) {
-		this._view.webview.postMessage({type: 'pickList'});
-		}
-	}
-
-	public pickTask() {
-		if (this._view) {
-		this._view.webview.postMessage({ type: 'pickTask' });
-		}
-	}
-
 	private _getHtmlForWebview(webview: vscode.Webview) {
-		// Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
 
-		// Do the same for the stylesheet.
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
 		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css'));
 		const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
 
-		// Use a nonce to only allow a specific script to be run.
 		const nonce = getNonce();
 
 		return `<!DOCTYPE html>

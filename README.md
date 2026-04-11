@@ -40,10 +40,8 @@ If you want to polish the Marketplace page, consider adding:
 
 1. Click **Login to Trello**.
 2. The extension opens Trello’s authorization page in your browser.
-3. After approving access, Trello shows your token on the page.
-4. Paste that token back into the VS Code prompt.
-
-The token is then validated and stored securely in VS Code secret storage.
+3. After approving access, Trello redirects back to the extension callback URI.
+4. The extension extracts the token, validates it against Trello, and stores it in VS Code secret storage.
 
 ## Extension Settings
 
@@ -57,15 +55,22 @@ The token is then validated and stored securely in VS Code secret storage.
 
 ## Release Notes
 
-### 0.1.0
+### 0.1.2
 
-Initial release of Task at Reach - Trello.
+Added `Reset Trello Data` action.
+Improved auth-state synchronization between boards and tasks webviews.
+Improved error handling for non-array Trello card payloads.
+UI/auth behavior refinements for login/logout states.
 
 ### 0.1.1
 
 Bug fix: logout warning now disappears after a successful login.
 Bug fix: the tasks view now refreshes after login instead of staying stuck on the logout message.
 Bug fix: auth state changes now resync the boards and tasks views automatically.
+
+### 0.1.0
+
+Initial release of Task at Reach - Trello.
 
 ---
 

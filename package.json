@@ -3,7 +3,7 @@
   "name": "tar-trello",
   "displayName": "Task at Reach - Trello",
   "description": "A way for you to see your current tasks from a trello board, move them to another column, add comments if required, and create a git branch for each task using a given code for their name.",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.108.2"
   },

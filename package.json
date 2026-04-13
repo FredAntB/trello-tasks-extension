@@ -4,7 +4,7 @@
   "displayName": "Task at Reach - Trello",
   "description": "A way for you to see your current tasks from a trello board, move them to another column, add comments if required, and create a git branch for each task using a given code for their name.",
   "version": "0.1.2",
-  "license": "GPL-3.0-or-later",
+  "license": "GPL-3.0-only",
   "engines": {
     "vscode": "^1.108.2"
   },

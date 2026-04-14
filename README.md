@@ -1,86 +1,59 @@
-# Task at Reach - Trello
+# Task at Reach - Trello (GitHub)
 
-Task at Reach - Trello is a VS Code extension that lets you browse Trello boards and tasks from the editor.
+Task at Reach - Trello is a VS Code extension for browsing Trello boards, lists, and tasks directly from the editor.
 
-It uses Trello’s token-based authorization flow, so users sign in directly with Trello and the resulting token is stored securely in VS Code secret storage.
+This README is the repository/developer document.
 
-## Features
+For the Marketplace-facing page, see [README.marketplace.md](README.marketplace.md).
 
-- Trello login via the browser token flow.
-- Boards view in the VS Code activity bar.
-- List selection and task browsing inside the editor.
-- Refresh actions for boards and tasks.
-- Built-in walkthrough for first-time setup.
+## Repository Structure
 
-### Suggested screenshots or GIFs
+- Source code: [src](src)
+- Webview assets: [media](media)
+- Extension resources/icons: [resources](resources)
+- Release history: [CHANGELOG.md](CHANGELOG.md)
+- Marketplace content: [README.marketplace.md](README.marketplace.md)
 
-If you want to polish the Marketplace page, consider adding:
+## Development Setup
 
-- Login flow screenshot or GIF.
-- Boards view screenshot.
-- Tasks view screenshot.
-
-## Requirements
-
-- VS Code `^1.108.2` or newer.
-- A Trello account.
-- A Trello Power-Up / API key.
-
-## Setup
-
-1. Install dependencies with `npm install`.
-2. Set the required environment variables for development:
+1. Install dependencies:
+	- `npm install`
+2. Configure environment variables for local development:
 	- `API_KEY`
 	- `APP_NAME`
-	- `BASE_URL` if you want to override the default Trello API base URL.
-3. Run `npm run compile` or `npm run watch`.
-4. Launch the extension host from VS Code.
+	- `BASE_URL` (optional override)
+	- `CALLBACK_URL` (used by browser callback login flow)
+3. Compile once:
+	- `npm run compile`
+4. Or run watch mode:
+	- `npm run watch`
+5. Press `F5` to run the extension in the Extension Development Host.
 
-## How login works
+## Commands and Views
 
-1. Click **Login to Trello**.
-2. The extension opens Trello’s authorization page in your browser.
-3. After approving access, Trello redirects back to the extension callback URI.
-4. The extension extracts the token, validates it against Trello, and stores it in VS Code secret storage.
+Main commands are contributed from [package.json](package.json), including:
 
-## Extension Settings
+- Login/Logout
+- Refresh Boards / Refresh Tasks
+- Reset Trello Data
 
-- `tar-trello.enabled`: Enable or disable the extension.
+Main views are:
 
-## Known Issues
+- Trello Boards webview
+- Trello Tasks webview
 
-- The Trello browser callback still needs to complete so VS Code can finish the login flow.
-- If the browser does not return focus to VS Code automatically, switch back to the editor and wait for the callback to finish.
-- Board and task data depend on a valid Trello token; if the session is revoked, use the reconnect action to sign in again.
+## Authentication Notes
 
-## Release Notes
+The extension uses browser-based Trello authorization and stores user tokens in VS Code Secret Storage.
 
-### 0.1.2
+If a token becomes invalid or revoked, users should re-authenticate.
 
-Added `Reset Trello Data` action.
-Improved auth-state synchronization between boards and tasks webviews.
-Improved error handling for non-array Trello card payloads.
-UI/auth behavior refinements for login/logout states.
+## Packaging and Publishing
 
-### 0.1.1
+Use scripts in [package.json](package.json) for packaging/publishing.
 
-Bug fix: logout warning now disappears after a successful login.
-Bug fix: the tasks view now refreshes after login instead of staying stuck on the logout message.
-Bug fix: auth state changes now resync the boards and tasks views automatically.
+Marketplace publishing should use [README.marketplace.md](README.marketplace.md) via `--readmePath`.
 
-### 0.1.0
+## License
 
-Initial release of Task at Reach - Trello.
-
----
-
-## Following extension guidelines
-
-- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## For more information
-
-- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+This project is licensed under GPL-3.0-only. See [LICENSE](LICENSE).

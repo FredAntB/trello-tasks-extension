@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import "node-fetch";
-
-const API_KEY = process.env.API_KEY;
-const BASE_URL = process.env.BASE_URL;
+import { getTrelloRuntimeConfig } from "./config";
 
 export interface BoardNode {
   id: string;
@@ -40,9 +38,10 @@ export class BoardModel {
 
   public retriveBoardNodes(): Thenable<BoardNode[]> {
     return (async () => {
+      const { apiKey, baseUrl } = getTrelloRuntimeConfig(this.context);
       const token = await this.getToken();
       const tokenParam = token ? `&token=${token}` : "";
-      const url = `${BASE_URL}/members/me/boards?key=${API_KEY}${tokenParam}`;
+      const url = `${baseUrl}/members/me/boards?key=${apiKey || ""}${tokenParam}`;
       const res = await fetch(url, {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -66,9 +65,10 @@ export class BoardModel {
 
   public retrieveLists(boardId: string): Thenable<ListNode[]> {
     return (async () => {
+      const { apiKey, baseUrl } = getTrelloRuntimeConfig(this.context);
       const token = await this.getToken();
       const tokenParam = token ? `&token=${token}` : "";
-      const url = `${BASE_URL}/boards/${boardId}/lists?key=${API_KEY}${tokenParam}`;
+      const url = `${baseUrl}/boards/${boardId}/lists?key=${apiKey || ""}${tokenParam}`;
       const res = await fetch(url, {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -85,9 +85,10 @@ export class BoardModel {
 
   public retrieveCards(listId: string, boardId?: string): Thenable<CardNode[]> {
     return (async () => {
+      const { apiKey, baseUrl } = getTrelloRuntimeConfig(this.context);
       const token = await this.getToken();
       const tokenParam = token ? `&token=${token}` : "";
-      const url = `${BASE_URL}/lists/${listId}/cards?key=${API_KEY}${tokenParam}`;
+      const url = `${baseUrl}/lists/${listId}/cards?key=${apiKey || ""}${tokenParam}`;
       const res = await fetch(url, {
         method: "GET",
         headers: { Accept: "application/json" },

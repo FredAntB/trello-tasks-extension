@@ -1,11 +1,8 @@
 import * as vscode from "vscode";
-
-const API_KEY = process.env.API_KEY;
-const BASE_URL = process.env.BASE_URL ?? "https://trello.com/1";
-const APP_NAME = process.env.APP_NAME;
-const CALLBACK_URL = process.env.CALLBACK_URL;
+import { getTrelloRuntimeConfig } from "./config";
 
 async function verifyToken(context: vscode.ExtensionContext): Promise<any> {
+  const { apiKey, baseUrl } = getTrelloRuntimeConfig(context);
   const accessToken = await context.secrets.get("trelloAccessToken");
 
   if (!accessToken) {
@@ -13,8 +10,8 @@ async function verifyToken(context: vscode.ExtensionContext): Promise<any> {
     throw new Error("You need to login if you want to verify.");
   }
 
-  const url = new URL(`${BASE_URL}/members/me`);
-  url.searchParams.set("key", API_KEY || "");
+  const url = new URL(`${baseUrl}/members/me`);
+  url.searchParams.set("key", apiKey || "");
   url.searchParams.set("token", accessToken);
 
   const response = await fetch(url.toString(), {
@@ -37,10 +34,15 @@ async function verifyToken(context: vscode.ExtensionContext): Promise<any> {
   return payload;
 }
 
-function buildAuthorizeUrl(returnUrl: string): string {
-  const authUrl = new URL(`${BASE_URL}/authorize`);
-  authUrl.searchParams.set("key", API_KEY || "");
-  authUrl.searchParams.set("name", APP_NAME || "Task at Reach - Trello");
+function buildAuthorizeUrl(
+  apiKey: string,
+  appName: string,
+  baseUrl: string,
+  returnUrl: string,
+): string {
+  const authUrl = new URL(`${baseUrl}/authorize`);
+  authUrl.searchParams.set("key", apiKey);
+  authUrl.searchParams.set("name", appName);
   authUrl.searchParams.set("expiration", "never");
   authUrl.searchParams.set("scope", "read,write");
   authUrl.searchParams.set("response_type", "token");
@@ -96,17 +98,19 @@ async function waitForTokenFromCallback(
 }
 
 export async function login(context: vscode.ExtensionContext): Promise<void> {
-  if (!API_KEY) {
+  const { apiKey, appName, callbackUrl, baseUrl } = getTrelloRuntimeConfig(context);
+
+  if (!apiKey) {
     vscode.window.showErrorMessage("Trello API key missing.");
     throw new Error("Missing API key.");
   }
 
-  if (!APP_NAME) {
+  if (!appName) {
     vscode.window.showErrorMessage("Trello app name missing.");
     throw new Error("Missing Trello's app name.");
   }
 
-  if (!CALLBACK_URL) {
+  if (!callbackUrl) {
     vscode.window.showErrorMessage("Trello callback URL missing.");
     throw new Error("Missing callback URL.");
   }
@@ -114,7 +118,7 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
   try {
     const tokenPromise = waitForTokenFromCallback(context);
 
-    const authUrl = buildAuthorizeUrl(CALLBACK_URL);
+    const authUrl = buildAuthorizeUrl(apiKey, appName, baseUrl, callbackUrl);
     await vscode.env.openExternal(vscode.Uri.parse(authUrl));
 
     const token = await tokenPromise;

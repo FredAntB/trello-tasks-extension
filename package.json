@@ -2,15 +2,20 @@
   "publisher": "fuoco",
   "name": "tar-trello",
   "displayName": "Task at Reach - Trello",
-  "description": "A way for you to see your current tasks from a trello board, move them to another column, add comments if required, and create a git branch for each task using a given code for their name.",
+  "description": "A way for you to see your current tasks from a trello board.",
   "version": "0.1.2",
   "license": "GPL-3.0-only",
   "engines": {
     "vscode": "^1.108.2"
   },
+  "icon": "resources/icon-white.png",
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "github:FredAntB/trello-tasks-extension.git"
+  },
   "activationEvents": ["onUri"],
   "main": "./out/extension.js",
   "contributes": {
@@ -99,28 +104,46 @@
           {
             "id": "login",
             "title": "Login",
-            "description": "To begin, you'll need to log in to your Trello account. Click the button below to authenticate and connect your Trello boards with TarTrello.\n[Login](command:tar-trello.login)",
+            "description": "To begin, you'll need to log in to your Trello account by following the gif or clicking the button below.\n[Login](command:tar-trello.login)",
             "media": {
-              "image": "images/trello-login.png",
-              "altText": "Login example image"
+              "altText": "Login to trello",
+              "image": "resources/login.gif"
             }
           },
           {
             "id": "select-board",
             "title": "Select Board",
-            "description": "Now that you're logged in, it's time to select the Trello board you want to work with. Choose the board that contains your tasks to get started.\n[Select Board](command:tar-trello.select-board)",
+            "description": "Now that you're logged in the boards will be displayed automatically. Choose one board from the list to proceed.",
             "media": {
-              "image": "images/trello-select-board.png",
-              "altText": "Select Board example image"
+              "altText": "Select a board",
+              "image": "resources/select-board.gif"
+            }
+          },
+          {
+            "id": "refresh-boards",
+            "title": "Refresh Boards",
+            "description": "If you don't see your board, or if you've made changes to your boards on Trello, you can refresh the list of boards by clicking the refresh button in the top right corner of the boards view.",
+            "media": {
+              "altText": "Refresh boards",
+              "image": "resources/refresh-boards.gif"
+            }
+          },
+          {
+            "id": "select-list",
+            "title": "Select List",
+            "description": "After selecting a board, you can choose a list within that board to focus on. This will allow you to visualize tasks within that specific list.",
+            "media": {
+              "altText": "Select a list",
+              "image": "resources/select-list.gif"
             }
           },
           {
             "id": "view-tasks",
             "title": "View Tasks",
-            "description": "With your board selected, you can now view your current tasks directly within VS Code. This allows you to manage your tasks without switching contexts.\n[View Tasks](command:tar-trello.view-tasks)",
+            "description": "With your board selected, you can now view your current tasks directly within VS Code. This allows you to manage your tasks without switching contexts.",
             "media": {
-              "image": "images/trello-view-tasks.png",
-              "altText": "View Tasks example image"
+              "altText": "View tasks",
+              "image": "resources/view-tasks.gif"
             }
           }
         ]
@@ -166,11 +189,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "build:config": "node ./scripts/generate-builtins.mjs",
+    "compile": "npm run build:config && tsc -p ./",
+    "watch": "npm run build:config && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "vsce:package": "vsce package --readmePath README.marketplace.md",
+    "vsce:publish": "vsce publish --readmePath README.marketplace.md"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

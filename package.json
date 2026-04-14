@@ -195,8 +195,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "vsce:package": "vsce package --readmePath README.marketplace.md",
-    "vsce:publish": "vsce publish --readmePath README.marketplace.md"
+    "vsce:package": "vsce package --readme-path README.marketplace.md",
+    "vsce:publish": "vsce publish --readme-path README.marketplace.md"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

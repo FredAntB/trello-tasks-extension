@@ -30,7 +30,6 @@ async function verifyToken(context: vscode.ExtensionContext): Promise<any> {
   }
 
   vscode.window.showInformationMessage("Successful Trello authentication.");
-  console.dir(payload, { depth: null });
   return payload;
 }
 

@@ -14,18 +14,15 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
     const loadBoardsButton = /** @type {HTMLButtonElement | null} */ (document.querySelector('.load-boards-button'));
 
     const oldState = vscode.getState() || { boards: [], listsByBoardId: {} };
-    console.dir(oldState.board, { depth: null });
 
     if (oldState.boards && oldState.boards.length > 0) {
         if (loadBoardsButton) {
             loadBoardsButton.disabled = true;
             loadBoardsButton.hidden = true;
             loadBoardsButton.style.display = 'none';
-            console.log('[webview] initial state: boards present, disabling load button');
         }
     }
     else {
-        console.log('[webview] initial state: no boards, load button enabled');
         loadBoardsButton?.removeAttribute('disabled');
         loadBoardsButton?.removeAttribute('hidden');
         loadBoardsButton?.style.removeProperty('display');
@@ -143,10 +140,8 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
         return parsed && luminance(parsed) < 0.5 ? 'dark' : 'light';
     }
 
-    // Handle messages sent from the extension to the webview
     window.addEventListener('message', event => {
-        const message = event.data; // The json data that the extension sent
-        console.log('[webview] received message', message);
+        const message = event.data;
         const action = message.command || message.type;
         switch (action) {
             case 'notAuthenticated': {
@@ -176,7 +171,6 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 break;
             }
             case 'boards': {
-                console.dir(message.boards, { depth: null });
                 updateBoardList(message.boards || []);
                 break;
             }
@@ -189,7 +183,6 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
                 break;
             }
             case 'error': {
-                console.error('Error from extension:', message.message);
                 break;
             }
         }
@@ -277,16 +270,13 @@ const acquireVsCodeApi = globalThis.acquireVsCodeApi;
 
         boardList.textContent = '';
         for (const board of boards) {
-            console.dir(board, { depth: null });
             renderCard(board);
         }
-        // Update the saved state
+        
         saveState();
-        // disable load button when boards exist, enable when cleared
         if (loadBoardsButton) {
             loadBoardsButton.disabled = Array.isArray(boards) && boards.length > 0;
             loadBoardsButton.hidden = Array.isArray(boards) && boards.length > 0;
-            console.log('[webview] updateBoardList: set disabled=', loadBoardsButton.disabled, 'hidden=', loadBoardsButton.hidden, 'boards.length=', boards.length);
         }
     }
 

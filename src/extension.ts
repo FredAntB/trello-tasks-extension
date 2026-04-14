@@ -5,10 +5,7 @@ import { TasksViewProvider } from "./lib/task.webview";
 
 let board = null;
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "tar-trello" is now active!');
-
   const isFresh = context.globalState.get<boolean>("tar-trello.fresh", true);
-  console.log("tar-trello.fresh context value:", isFresh);
   
   void vscode.commands.executeCommand("setContext", "tar-trello.fresh", isFresh);
 
